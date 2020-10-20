@@ -1,5 +1,8 @@
 pub use anyhow::{anyhow, Result};
-use std::{ops::{Deref, DerefMut}, str::FromStr};
+use std::{
+    ops::{Deref, DerefMut},
+    str::FromStr,
+};
 
 /// Basic struct that is either operation or number
 /// This struct is is in Vec in struct Priklad
@@ -54,18 +57,18 @@ impl Operation {
     fn is_mult(&self) -> bool {
         matches!(self, Operation::Mult) || matches!(self, Operation::Div)
     }
-    fn calc<T>(&self, num1: T, num2: T) -> T
+    fn calc<T>(&self, num1: T, num2: T) -> T // TODO: Should be result because of x/0
     where
         T: std::ops::Add<Output = T>
             + std::ops::Sub<Output = T>
             + std::ops::Mul<Output = T>
-            + std::ops::Div<Output = T>
+            + std::ops::Div<Output = T>,
     {
         match self {
             Operation::Plus => num1 + num2,
             Operation::Minus => num1 - num2,
             Operation::Mult => num1 * num2,
-            Operation::Div => num1 / num2,
+            Operation::Div => num1 / num2, // TODO: This should return an Err / or catch an unwind???
         }
     }
 }
@@ -93,7 +96,8 @@ where
                 self.replace(op.calc(num1, num2));
             }
         }
-        while self.len() != 1 { // FIXME: Why is this needed? Where does the iter break?
+        while self.len() != 1 {
+            // FIXME: Why is this needed? Where does the iter break?
             self.reset();
             while let Some((num1, op, num2)) = self.next() {
                 self.replace(op.calc(num1, num2));
@@ -150,9 +154,7 @@ where
                 buff.push(c);
             } else {
                 if !buff.trim().is_empty() {
-                    priklad
-                        
-                        .push(Entry::Number(buff.trim().parse().unwrap()));
+                    priklad.push(Entry::Number(buff.trim().parse().unwrap()));
                 };
                 buff = "".into();
                 if c != '\n' {
