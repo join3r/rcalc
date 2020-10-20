@@ -1,0 +1,22 @@
+[package]
+name = "rcalc"
+version = "0.1.0"
+authors = ["join3r"]
+edition = "2018"
+license = "CC-BY-NC-ND-4.0"
+
+[dependencies]
+anyhow = "1.0.33"
+rust_decimal = "1.8.1"
+
+
+[profile.release]
+opt-level = "z"
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = "abort"
+incremental = false
+overflow-checks = true
