@@ -1,8 +1,6 @@
 pub use anyhow::{anyhow, Result};
-use std::{
-    ops::{Deref, DerefMut},
-    str::FromStr,
-};
+use rust_decimal::prelude::*;
+use std::{ops::{Deref, DerefMut}, str::FromStr};
 
 /// Basic struct that is either operation or number
 /// This struct is is in Vec in struct Priklad
@@ -57,18 +55,26 @@ impl Operation {
     fn is_mult(&self) -> bool {
         matches!(self, Operation::Mult) || matches!(self, Operation::Div)
     }
-    fn calc<T>(&self, num1: T, num2: T) -> T // TODO: Should be result because of x/0
+    fn calc<T>(&self, num1: T, num2: T) -> Result<T>
     where
         T: std::ops::Add<Output = T>
             + std::ops::Sub<Output = T>
             + std::ops::Mul<Output = T>
-            + std::ops::Div<Output = T>,
+            + std::ops::Div<Output = T>
+            + std::marker::Copy
+            + IsZero,
     {
         match self {
-            Operation::Plus => num1 + num2,
-            Operation::Minus => num1 - num2,
-            Operation::Mult => num1 * num2,
-            Operation::Div => num1 / num2, // TODO: This should return an Err / or catch an unwind???
+            Operation::Plus => Ok(num1 + num2),
+            Operation::Minus => Ok(num1 - num2),
+            Operation::Mult => Ok(num1 * num2),
+            Operation::Div => {
+                if num2.is_zero() {
+                    Err(anyhow!("Division by 0"))
+                } else {
+                    Ok(num1 / num2)
+                }
+            }
         }
     }
 }
@@ -89,18 +95,19 @@ where
         T: std::ops::Mul<Output = T>
             + std::ops::Div<Output = T>
             + std::ops::Add<Output = T>
-            + std::ops::Sub<Output = T>,
+            + std::ops::Sub<Output = T>
+            + IsZero,
     {
-        while let Some((num1, op, num2)) = self.next() {
-            if op.is_mult() {
-                self.replace(op.calc(num1, num2));
+        while let Some(t) = self.next() {
+            if t.op.is_mult() {
+                self.replace(t.op.calc(t.num1, t.num2)?);
             }
         }
         while self.len() != 1 {
             // FIXME: Why is this needed? Where does the iter break?
             self.reset();
-            while let Some((num1, op, num2)) = self.next() {
-                self.replace(op.calc(num1, num2));
+            while let Some(t) = self.next() {
+                self.replace(t.op.calc(t.num1, t.num2)?);
             }
         }
         if self.len() != 1 {
@@ -123,7 +130,7 @@ impl<T> Iterator for Priklad<T>
 where
     T: std::fmt::Debug + std::marker::Copy,
 {
-    type Item = (T, Operation, T);
+    type Item = Triplet<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let num1 = self.get(self.idx)?.get_num().unwrap(); // TODO remove unwrap
@@ -131,7 +138,7 @@ where
         let op = self.get(self.idx)?.get_op().unwrap(); // TODO remove unwrap
         self.idx += 1;
         let num2 = self[self.idx].get_num().unwrap(); // TODO remove unwrap
-        Some((num1, op, num2))
+        Some(Triplet { num1, op, num2, idx: self.idx })
     }
 }
 
@@ -166,6 +173,14 @@ where
     }
 }
 
+#[derive(Eq, PartialEq, Debug)]
+pub struct Triplet<T> {
+    num1: T,
+    op: Operation,
+    num2: T,
+    idx: usize,
+}
+
 impl<T> Deref for Priklad<T> {
     type Target = Vec<Entry<T>>;
 
@@ -177,5 +192,34 @@ impl<T> Deref for Priklad<T> {
 impl<T> DerefMut for Priklad<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
+    }
+}
+
+pub trait IsZero {
+    fn is_zero(self) -> bool;
+}
+
+impl IsZero for Decimal {
+    fn is_zero(self) -> bool {
+        self == rust_decimal::Decimal::from_i8(0).unwrap()
+    }
+}
+
+impl IsZero for f64 {
+    fn is_zero(self) -> bool {
+        self == 0.0
+    }
+}
+
+impl IsZero for i128 {
+    fn is_zero(self) -> bool {
+        self == 0
+    }
+}
+
+// needed for Test
+impl PartialEq<(&str, Operation, &str)> for Triplet<Decimal> {
+    fn eq(&self, other: &(&str, Operation, &str)) -> bool {
+        self.num1 == Decimal::from_str(other.0).unwrap() && self.op == other.1 && self.num2 == Decimal::from_str(other.2).unwrap()
     }
 }
