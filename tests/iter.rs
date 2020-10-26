@@ -23,6 +23,15 @@ fn iter_compl_plus_1() {
     assert_eq!(priklad.next().unwrap(), ("4.0", Operation::Plus, "5.0"));
 }
 #[test]
+fn iter_compl_minus_1() {
+    let test = "-1-2-3-4-5\n";
+    let mut priklad: Priklad = test.parse().unwrap();
+    assert_eq!(priklad.next().unwrap(), ("-1.0", Operation::Minus, "2.0"));
+    assert_eq!(priklad.next().unwrap(), ("2.0", Operation::Minus, "3.0"));
+    assert_eq!(priklad.next().unwrap(), ("3.0", Operation::Minus, "4.0"));
+    assert_eq!(priklad.next().unwrap(), ("4.0", Operation::Minus, "5.0"));
+}
+#[test]
 fn iter_compl_mult_1() {
     let test = "1*2*3*4*5\n";
     let mut priklad: Priklad = test.parse().unwrap();
