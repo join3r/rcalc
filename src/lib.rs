@@ -1,20 +1,20 @@
-pub use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Result};
 use rust_decimal::prelude::*;
-use std::{ops::{Deref, DerefMut}, str::FromStr};
+use std::{
+    ops::{Deref, DerefMut},
+    str::FromStr,
+};
 
 /// Basic struct that is either operation or number
 /// This struct is is in Vec in struct Priklad
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum Entry<T> {
+pub enum Entry {
     Operation(Operation),
-    Number(T),
+    Number(Decimal),
 }
 
-impl<T> Entry<T>
-where
-    T: std::fmt::Debug + std::marker::Copy,
-{
-    fn get_num(&self) -> Result<T> {
+impl Entry {
+    fn get_num(&self) -> Result<Decimal> {
         if let Entry::Number(num) = self {
             Ok(num.to_owned())
         } else {
@@ -55,21 +55,13 @@ impl Operation {
     fn is_mult(&self) -> bool {
         matches!(self, Operation::Mult) || matches!(self, Operation::Div)
     }
-    fn calc<T>(&self, num1: T, num2: T) -> Result<T>
-    where
-        T: std::ops::Add<Output = T>
-            + std::ops::Sub<Output = T>
-            + std::ops::Mul<Output = T>
-            + std::ops::Div<Output = T>
-            + std::marker::Copy
-            + IsZero,
-    {
+    fn calc(&self, num1: Decimal, num2: Decimal) -> Result<Decimal> {
         match self {
             Operation::Plus => Ok(num1 + num2),
             Operation::Minus => Ok(num1 - num2),
             Operation::Mult => Ok(num1 * num2),
             Operation::Div => {
-                if num2.is_zero() {
+                if num2 == Decimal::from(0) {
                     Err(anyhow!("Division by 0"))
                 } else {
                     Ok(num1 / num2)
@@ -81,23 +73,13 @@ impl Operation {
 
 /// Struct that holds the math problem
 #[derive(Default, Debug, Eq, PartialEq)]
-pub struct Priklad<T> {
-    pub inner: Vec<Entry<T>>,
+pub struct Priklad {
+    pub inner: Vec<Entry>,
     pub idx: usize,
 }
 
-impl<T> Priklad<T>
-where
-    T: std::default::Default + std::fmt::Debug + std::marker::Copy,
-{
-    pub fn solve(mut self) -> Result<T>
-    where
-        T: std::ops::Mul<Output = T>
-            + std::ops::Div<Output = T>
-            + std::ops::Add<Output = T>
-            + std::ops::Sub<Output = T>
-            + IsZero,
-    {
+impl Priklad {
+    pub fn solve(mut self) -> Result<Decimal> {
         while let Some(t) = self.next() {
             if t.op.is_mult() {
                 self.replace(t.op.calc(t.num1, t.num2)?);
@@ -119,18 +101,15 @@ where
     fn reset(&mut self) {
         self.idx = 0
     }
-    fn replace(&mut self, solution: T) {
+    fn replace(&mut self, solution: Decimal) {
         let range = self.idx - 2..=self.idx;
         let replace_with = vec![Entry::Number(solution)];
         self.splice(range, replace_with);
     }
 }
 
-impl<T> Iterator for Priklad<T>
-where
-    T: std::fmt::Debug + std::marker::Copy,
-{
-    type Item = Triplet<T>;
+impl Iterator for Priklad {
+    type Item = Triplet;
 
     fn next(&mut self) -> Option<Self::Item> {
         let num1 = self.get(self.idx)?.get_num().unwrap(); // TODO remove unwrap
@@ -138,20 +117,21 @@ where
         let op = self.get(self.idx)?.get_op().unwrap(); // TODO remove unwrap
         self.idx += 1;
         let num2 = self[self.idx].get_num().unwrap(); // TODO remove unwrap
-        Some(Triplet { num1, op, num2, idx: self.idx })
+        Some(Triplet {
+            num1,
+            op,
+            num2,
+            idx: self.idx,
+        })
     }
 }
 
-impl<T> FromStr for Priklad<T>
-where
-    T: std::default::Default + std::str::FromStr + std::ops::Neg,
-    <T as std::str::FromStr>::Err: std::error::Error,
-{
+impl FromStr for Priklad {
     type Err = anyhow::Error;
 
-    fn from_str(s: &str) -> Result<Self, anyhow::Error> {
+    fn from_str(s: &str) -> Result<Self> {
         let mut buff = String::new();
-        let mut priklad: Priklad<T> = Priklad::default();
+        let mut priklad: Priklad = Priklad::default();
 
         for (n, c) in s.chars().enumerate() {
             if c == ' ' {
@@ -160,9 +140,11 @@ where
             if c.is_digit(10) || c == '.' || (n == 0 && Operation::from(&c)? == Operation::Minus) {
                 buff.push(c);
             } else {
-                if !buff.trim().is_empty() {
-                    priklad.push(Entry::Number(buff.trim().parse().unwrap()));
-                };
+                if let Ok(num) = buff.trim().parse::<Decimal>() {
+                    priklad.push(Entry::Number(num));
+                } else {
+                    return Err(anyhow!("Cannot end with an operation"));
+                }
                 buff = "".into();
                 if c != '\n' {
                     priklad.push(Entry::Operation(Operation::from(&c)?));
@@ -174,52 +156,32 @@ where
 }
 
 #[derive(Eq, PartialEq, Debug)]
-pub struct Triplet<T> {
-    num1: T,
+pub struct Triplet {
+    num1: Decimal,
     op: Operation,
-    num2: T,
+    num2: Decimal,
     idx: usize,
 }
 
-impl<T> Deref for Priklad<T> {
-    type Target = Vec<Entry<T>>;
+impl Deref for Priklad {
+    type Target = Vec<Entry>;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
-impl<T> DerefMut for Priklad<T> {
+impl DerefMut for Priklad {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }
 }
 
-pub trait IsZero {
-    fn is_zero(self) -> bool;
-}
-
-impl IsZero for Decimal {
-    fn is_zero(self) -> bool {
-        self == rust_decimal::Decimal::from_i8(0).unwrap()
-    }
-}
-
-impl IsZero for f64 {
-    fn is_zero(self) -> bool {
-        self == 0.0
-    }
-}
-
-impl IsZero for i128 {
-    fn is_zero(self) -> bool {
-        self == 0
-    }
-}
-
 // needed for Test
-impl PartialEq<(&str, Operation, &str)> for Triplet<Decimal> {
+impl PartialEq<(&str, Operation, &str)> for Triplet {
     fn eq(&self, other: &(&str, Operation, &str)) -> bool {
-        self.num1 == Decimal::from_str(other.0).unwrap() && self.op == other.1 && self.num2 == Decimal::from_str(other.2).unwrap()
+        self.num1 == Decimal::from_str(other.0).unwrap()
+            && self.op == other.1
+            && self.num2 == Decimal::from_str(other.2).unwrap()
     }
 }

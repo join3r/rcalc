@@ -3,9 +3,9 @@ use rust_decimal::prelude::*;
 
 #[test]
 fn parse_1_plus_1() {
-    let test = "1+1\n";
-    let par: Priklad<Decimal> = test.parse().unwrap();
-    let comp: Priklad<Decimal> = Priklad {
+    let test = " 1 + 1 \n";
+    let par: Priklad = test.parse().unwrap();
+    let comp: Priklad = Priklad {
         inner: vec![
             Entry::Number(Decimal::from_str("1.0").unwrap()),
             Entry::Operation(Operation::Plus),
@@ -18,8 +18,8 @@ fn parse_1_plus_1() {
 #[test]
 fn parse_1_times_1() {
     let test = "1*1\n";
-    let par: Priklad<Decimal> = test.parse().unwrap();
-    let comp: Priklad<Decimal> = Priklad {
+    let par: Priklad = test.parse().unwrap();
+    let comp: Priklad = Priklad {
         inner: vec![
             Entry::Number(Decimal::from_str("1.0").unwrap()),
             Entry::Operation(Operation::Mult),
@@ -33,8 +33,8 @@ fn parse_1_times_1() {
 #[test]
 fn parse_compl_plus_1() {
     let test = "1+2+3+4+5\n";
-    let par: Priklad<Decimal> = test.parse().unwrap();
-    let comp: Priklad<Decimal> = Priklad {
+    let par: Priklad = test.parse().unwrap();
+    let comp: Priklad = Priklad {
         inner: vec![
             Entry::Number(Decimal::from_str("1.0").unwrap()),
             Entry::Operation(Operation::Plus),
@@ -54,8 +54,8 @@ fn parse_compl_plus_1() {
 #[test]
 fn parse_compl_mult_1() {
     let test = "1*2*3*4*5\n";
-    let par: Priklad<Decimal> = test.parse().unwrap();
-    let comp: Priklad<Decimal> = Priklad {
+    let par: Priklad = test.parse().unwrap();
+    let comp: Priklad = Priklad {
         inner: vec![
             Entry::Number(Decimal::from_str("1.0").unwrap()),
             Entry::Operation(Operation::Mult),
@@ -75,8 +75,8 @@ fn parse_compl_mult_1() {
 #[test]
 fn parse_compl_mix_1() {
     let test = "1+2*3-4/5\n";
-    let par: Priklad<Decimal> = test.parse().unwrap();
-    let comp: Priklad<Decimal> = Priklad {
+    let par: Priklad = test.parse().unwrap();
+    let comp: Priklad = Priklad {
         inner: vec![
             Entry::Number(Decimal::from_str("1.0").unwrap()),
             Entry::Operation(Operation::Plus),
@@ -96,8 +96,8 @@ fn parse_compl_mix_1() {
 #[test]
 fn parse_neg_1() {
     let test = "-1+1\n";
-    let par: Priklad<Decimal> = test.parse().unwrap();
-    let comp: Priklad<Decimal> = Priklad {
+    let par: Priklad = test.parse().unwrap();
+    let comp: Priklad = Priklad {
         inner: vec![
             Entry::Number(Decimal::from_str("-1.0").unwrap()),
             Entry::Operation(Operation::Plus),
@@ -111,8 +111,8 @@ fn parse_neg_1() {
 #[test]
 fn parse_neg_float_1() {
     let test = "-1.23+1.23\n";
-    let par: Priklad<Decimal> = test.parse().unwrap();
-    let comp: Priklad<Decimal> = Priklad {
+    let par: Priklad = test.parse().unwrap();
+    let comp: Priklad = Priklad {
         inner: vec![
             Entry::Number(Decimal::from_str("-1.23").unwrap()),
             Entry::Operation(Operation::Plus),
@@ -126,8 +126,8 @@ fn parse_neg_float_1() {
 #[test]
 fn parse_float_1() {
     let test = "-1.888+1.222\n";
-    let par: Priklad<Decimal> = test.parse().unwrap();
-    let comp: Priklad<Decimal> = Priklad {
+    let par: Priklad = test.parse().unwrap();
+    let comp: Priklad = Priklad {
         inner: vec![
             Entry::Number(Decimal::from_str("-1.888").unwrap()),
             Entry::Operation(Operation::Plus),

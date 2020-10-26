@@ -1,20 +1,20 @@
+mod gui;
 mod lib;
-use lib::{Priklad, Result};
-use std::io::{stdin, stdout, Write};
-use rust_decimal::prelude::*;
+pub use anyhow::{anyhow, Result};
+use iced::{Application, Settings};
+pub use lib::Priklad;
 
 fn main() -> Result<()> {
-    loop {
-        print!("Priklad: ");
-        stdout().flush()?;
-        let mut input = String::new();
-        stdin().read_line(&mut input)?;
-        if input == "\n" {
-            break;
-        };
-        let priklad: Priklad<Decimal> = input.parse()?;
-        let vysledok: Decimal = priklad.solve()?;
-        println!("{} = {}", input.trim(), vysledok);
-    }
+    let settings = Settings {
+        window: iced::window::Settings {
+            size: (512, 48),
+            resizable: false,
+            decorations: true,
+        },
+        antialiasing: true,
+        flags: (),
+        ..Settings::default()
+    };
+    gui::RScalc::run(settings);
     Ok(())
 }
