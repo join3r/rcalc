@@ -23,7 +23,10 @@ fn solve_compl_plus_1() {
 fn solve_compl_minus_1() {
     let test = "-1-2-3-4-5\n";
     let priklad: Priklad = test.parse().unwrap();
-    assert_eq!(priklad.solve().unwrap(), Decimal::from_str("-15.0").unwrap());
+    assert_eq!(
+        priklad.solve().unwrap(),
+        Decimal::from_str("-15.0").unwrap()
+    );
 }
 #[test]
 fn solve_compl_mult_1() {

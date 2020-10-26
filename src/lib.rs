@@ -85,12 +85,10 @@ impl Priklad {
                 self.replace(t.op.calc(t.num1, t.num2)?);
             }
         }
-        while self.len() != 1 {
-            // FIXME: Why is this needed? Where does the iter break?
-            self.reset();
-            while let Some(t) = self.next() {
-                self.replace(t.op.calc(t.num1, t.num2)?);
-            }
+        self.reset();
+        while let Some(t) = self.next() {
+            dbg!(self.idx);
+            self.replace(t.op.calc(t.num1, t.num2)?);
         }
         if self.len() != 1 {
             Err(anyhow!("No successful finish\n{:?}", &self))
@@ -105,6 +103,7 @@ impl Priklad {
         let range = self.idx - 2..=self.idx;
         let replace_with = vec![Entry::Number(solution)];
         self.splice(range, replace_with);
+        self.idx -= 2;
     }
 }
 

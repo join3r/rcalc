@@ -71,6 +71,22 @@ fn parse_compl_minus_1() {
     assert_eq!(par, comp);
 }
 #[test]
+fn parse_compl_minus_11() {
+    let test = "-1-1-1\n";
+    let par: Priklad = test.parse().unwrap();
+    let comp: Priklad = Priklad {
+        inner: vec![
+            Entry::Number(Decimal::from_str("-1.0").unwrap()),
+            Entry::Operation(Operation::Minus),
+            Entry::Number(Decimal::from_str("1.0").unwrap()),
+            Entry::Operation(Operation::Minus),
+            Entry::Number(Decimal::from_str("1.0").unwrap()),
+        ],
+        ..Default::default()
+    };
+    assert_eq!(par, comp);
+}
+#[test]
 fn parse_compl_mult_1() {
     let test = "1*2*3*4*5\n";
     let par: Priklad = test.parse().unwrap();
